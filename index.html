@@ -1,54 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LubbeNet Home Server Network</title>
+  <meta charset="UTF-8">
+  <title>Library SYS</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
-
-    header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
     h1 {
-      font-size: 3rem;
-      margin: 0;
-      color: #4fc3f7;
+      font-size: 20px;
     }
-
-    p {
-      font-size: 1.2rem;
-      color: #aaaaaa;
+    input, textarea, button {
+      margin: 5px 0;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
     }
-
-
-    footer {
-      position: absolute;
-      bottom: 1rem;
-      font-size: 0.9rem;
-      color: #555;
+    input, textarea {
+      width: 250px;
+    }
+    button {
+      background: #444;
+      color: white;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    button:hover {
+      background: #666;
+    }
+    #output {
+      background: white;
+      color: black;
+      padding: 10px;
+      width: 250px;
+      height: 150px;
+      overflow-y: auto;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>LubbeNet</h1>
-    <p>Welcome to your home server network landing</p>
-  </header>
-  <footer>
-    © 2025 LubbeNet – Home Server Network
-  </footer>
+  <h1>Library SYS Main Menu</h1>
+
+  <label for="entry">Input:</label><br>
+  <input type="text" id="entry" placeholder="Book/User/Order"><br>
+
+  <div>
+    <button onclick="addBook()">Add Book</button>
+    <button onclick="viewBooks()">View Books</button>
+    <button onclick="addUser()">Add User</button>
+    <button onclick="viewUsers()">View Users</button>
+    <button onclick="addOrder()">Add Order</button>
+    <button onclick="viewOrders()">View Orders</button>
+  </div>
+
+  <h3>Status / Output:</h3>
+  <div id="output"></div>
+
+  <script>
+    // Use localStorage instead of text files
+    let books = JSON.parse(localStorage.getItem("books")) || [];
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+    const entryBox = document.getElementById("entry");
+    const output = document.getElementById("output");
+
+    function showMessage(msg) {
+      output.innerText = msg;
+    }
+
+    function addBook() {
+      const book = entryBox.value.trim();
+      if (!book) return showMessage("Enter a book name.");
+      books.push(book);
+      localStorage.setItem("books", JSON.stringify(books));
+      entryBox.value = "";
+      showMessage("Book added.");
+    }
+
+    function viewBooks() {
+      if (books.length === 0) return showMessage("No books found.");
+      showMessage("Books:\n" + books.join("\n"));
+    }
+
+    function addUser() {
+      const user = entryBox.value.trim();
+      if (!user) return showMessage("Enter a username.");
+      if (users.includes(user)) return showMessage("User already exists.");
+      users.push(user);
+      localStorage.setItem("users", JSON.stringify(users));
+      entryBox.value = "";
+      showMessage("User added.");
+    }
+
+    function viewUsers() {
+      if (users.length === 0) return showMessage("No users found.");
+      showMessage("Users:\n" + users.join("\n"));
+    }
+
+    function addOrder() {
+      const input = entryBox.value.trim();
+      if (!input.includes(",")) return showMessage("Enter as: username, bookname");
+      let [user, book] = input.split(",").map(s => s.trim());
+      if (!users.includes(user) || !books.includes(book)) {
+        return showMessage("User or Book does not exist.");
+      }
+      orders.push({user, book});
+      localStorage.setItem("orders", JSON.stringify(orders));
+      entryBox.value = "";
+      showMessage("Order added.");
+    }
+
+    function viewOrders() {
+      if (orders.length === 0) return showMessage("No orders found.");
+      let out = "Orders:\n";
+      orders.forEach(o => {
+        out += `${o.user} → ${o.book}\n`;
+      });
+      showMessage(out);
+    }
+  </script>
 </body>
 </html>
