@@ -1,54 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LubbeNet Home Server Network</title>
+  <meta charset="UTF-8">
+  <title>Library SYS</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
-
-    header {
-      text-align: center;
-      margin-bottom: 2rem;
+    h1, h2 {
+      margin-bottom: 10px;
     }
-
-    h1 {
-      font-size: 3rem;
-      margin: 0;
-      color: #4fc3f7;
+    input, textarea, button {
+      margin: 5px 0;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
     }
-
-    p {
-      font-size: 1.2rem;
-      color: #aaaaaa;
+    input, textarea {
+      width: 250px;
     }
-
-
-    footer {
-      position: absolute;
-      bottom: 1rem;
-      font-size: 0.9rem;
-      color: #555;
+    button {
+      background: #444;
+      color: white;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    button:hover {
+      background: #666;
+    }
+    #output {
+      background: white;
+      color: black;
+      padding: 10px;
+      width: 300px;
+      height: 150px;
+      overflow-y: auto;
+      border-radius: 6px;
+    }
+    .hidden {
+      display: none;
+    }
+    .panel {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid white;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>LubbeNet</h1>
-    <p>Welcome to your home server network landing</p>
-  </header>
-  <footer>
-    © 2025 LubbeNet – Home Server Network
-  </footer>
+  <h1>Library SYS Main Menu</h1>
+
+  <label for="entry">Input:</label><br>
+  <input type="text" id="entry" placeholder="Book/User/Order"><br>
+
+  <div>
+    <button onclick="addBook()">Add Book</button>
+    <button onclick="viewBooks()">View Books</button>
+    <button onclick="addUser()">Add User</button>
+    <button onclick="viewUsers()">View Users</button>
+    <button onclick="addOrder()">Add Order</button>
+    <button onclick="viewOrders()">View Orders</button>
+    <button onclick="openUserPanel()">User Panel</button>
+  </div>
+
+  <h3>Status / Output:</h3>
+  <div id="output"></div>
+
+  <!-- User Info Panel -->
+  <div id="userPanel" class="hidden panel">
+    <h2>User Information & Settings</h2>
+    <div id="userList"></div>
+    <div id="userDetails"></div>
+    <button onclick="closeUserPanel()">Back to Main Menu</button>
+  </div>
+
+  <script>
+    // ===== Storage =====
+    let books = JSON.parse(localStorage.getItem("books")) || [];
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+    const entryBox = document.getElementById("entry");
+    const output = document.getElementById("output");
+    const userPanel = document.getElementById("userPanel");
+    const userList = document.getElementById("userList");
+    const userDetails = document.getElementById("userDetails");
+
+    function saveAll() {
+      localStorage.setItem("books", JSON.stringify(books));
+      localStorage.setItem("users", JSON.stringify(users));
+      localStorage.setItem("orders", JSON.stringify(orders));
+    }
+
+    function showMessage(msg) {
+      output.innerText = msg;
+    }
+
+    // ===== Main Menu =====
+    function addBook() {
+      const book = entryBox.value.trim();
+      if (!book) return showMessage("Enter a book name.");
+      books.push(book);
+      saveAll();
+      entryBox.value = "";
+      showMessage("Book added.");
+    }
+
+    function viewBooks() {
+      if (books.length === 0) return showMessage("No books found.");
+      showMessage("Books:\n" + books.join("\n"));
+    }
+
+    function addUser() {
+      const user = entryBox.value.trim();
+      if (!user) return showMessage("Enter a username.");
+      if (users.find(u => u.name === user)) return showMessage("User already exists.");
+      users.push({ name: user, currentBook: "N/A" });
+      saveAll();
+      entryBox.value = "";
+      showMessage("User added.");
+    }
+
+    function viewUsers() {
+      if (users.length === 0) return showMessage("No users found.");
+      showMessage("Users:\n" + users.map(u => u.name).join("\n"));
+    }
+
+    function addOrder() {
+      const input = entryBox.value.trim();
+      if (!input.includes(",")) return showMessage("Enter as: username, bookname");
+      let [user, book] = input.split(",").map(s => s.trim());
+      if (!users.find(u => u.name === user) || !books.includes(book)) {
+        return showMessage("User or Book does not exist.");
+      }
+      orders.push({ user, book });
+      saveAll();
+      entryBox.value = "";
+      showMessage("Order added.");
+    }
+
+    function viewOrders() {
+      if (orders.length === 0) return showMessage("No orders found.");
+      let out = "Orders:\n";
+      orders.forEach(o => {
+        out += `${o.user} → ${o.book}\n`;
+      });
+      showMessage(out);
+    }
+
+    // ===== User Panel =====
+    function openUserPanel() {
+      renderUserList();
+      userPanel.classList.remove("hidden");
+    }
+
+    function closeUserPanel() {
+      userPanel.classList.add("hidden");
+      userDetails.innerHTML = "";
+    }
+
+    function renderUserList() {
+      if (users.length === 0) {
+        userList.innerHTML = "<p>No users found.</p>";
+        return;
+      }
+      userList.innerHTML = "";
+      users.forEach(u => {
+        const btn = document.createElement("button");
+        btn.innerText = u.name;
+        btn.onclick = () => showUserDetails(u.name);
+        userList.appendChild(btn);
+      });
+    }
+
+    function showUserDetails(username) {
+      const user = users.find(u => u.name === username);
+      if (!user) return;
+      userDetails.innerHTML = `
+        <h3>${user.name}</h3>
+        <p>Current Book: ${user.currentBook}</p>
+        <button onclick="renameUser('${user.name}')">Rename User</button>
+        <button onclick="deleteUser('${user.name}')">Delete User</button>
+        <button onclick="assignBook('${user.name}')">Change Book</button>
+      `;
+    }
+
+    function renameUser(oldName) {
+      const newName = prompt("Enter new username:", oldName);
+      if (!newName) return;
+      const user = users.find(u => u.name === oldName);
+      user.name = newName;
+      orders.forEach(o => { if (o.user === oldName) o.user = newName; });
+      saveAll();
+      renderUserList();
+      showUserDetails(newName);
+    }
+
+    function deleteUser(username) {
+      if (!confirm(`Delete user ${username}?`)) return;
+      users = users.filter(u => u.name !== username);
+      orders = orders.filter(o => o.user !== username);
+      saveAll();
+      renderUserList();
+      userDetails.innerHTML = "";
+    }
+
+    function assignBook(username) {
+      const book = prompt("Enter book to assign:", "");
+      if (!book || !books.includes(book)) {
+        alert("Book not found in library.");
+        return;
+      }
+      const user = users.find(u => u.name === username);
+      user.currentBook = book;
+      saveAll();
+      showUserDetails(username);
+    }
+  </script>
 </body>
 </html>
