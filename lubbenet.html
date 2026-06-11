@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lubbenet — Home Server</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --bg:        #050a0f;
+      --surface:   #080f18;
+      --panel:     #0b1520;
+      --border:    #0d2035;
+      --neon:      #00c8ff;
+      --neon-dim:  #0080a8;
+      --neon-glow: rgba(0, 200, 255, 0.18);
+      --neon-glow-strong: rgba(0, 200, 255, 0.35);
+      --text:      #d0e8f5;
+      --text-muted:#5a8090;
+      --text-dim:  #2a4555;
+      --green:     #00ffb0;
+      --red:       #ff3c6e;
+      --orange:    #ff9040;
+      --font-display: 'Space Mono', monospace;
+      --font-body:    'Space Grotesk', sans-serif;
+      --radius:    6px;
+    }
+
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── SCANLINE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.12) 2px,
+        rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    .grid-bg {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+      background: rgba(5,10,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--neon);
+      text-shadow: 0 0 20px var(--neon), 0 0 40px rgba(0,200,255,0.4);
+      letter-spacing: 0.08em;
+      text-decoration: none;
+    }
+
+    .nav-logo span { color: var(--text-muted); font-weight: 400; }
+
+    .nav-links {
+      display: flex; align-items: center; gap: 8px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--neon); background: var(--neon-glow); }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid var(--neon);
+      color: var(--neon) !important;
+      font-size: 12px !important;
+      letter-spacing: 0.08em !important;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s !important;
+    }
+    .nav-btn:hover {
+      background: var(--neon-glow) !important;
+      box-shadow: 0 0 16px var(--neon-glow-strong) !important;
+    }
+
+    /* ── STATUS PILL ── */
+    .status-pill {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--text-muted);
+      letter-spacing: 0.06em;
+      font-family: var(--font-display);
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green), 0 0 16px rgba(0,255,176,0.4);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 80px 40px 60px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -60%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(0,200,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: var(--neon);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      opacity: 0.85;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(48px, 8vw, 90px);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-title .neon-word {
+      color: var(--neon);
+      text-shadow:
+        0 0 30px var(--neon),
+        0 0 60px rgba(0,200,255,0.5),
+        0 0 100px rgba(0,200,255,0.2);
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 24px auto 48px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    }
+
+    .btn-primary {
+      background: var(--neon);
+      color: var(--bg);
+      border: none;
+      padding: 14px 32px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: box-shadow 0.2s, transform 0.15s;
+      box-shadow: 0 0 24px rgba(0,200,255,0.4);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 40px rgba(0,200,255,0.7);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 14px 32px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .btn-ghost:hover {
+      border-color: var(--neon);
+      color: var(--neon);
+      background: var(--neon-glow);
+    }
+
+    /* ── HERO STATS ── */
+    .hero-stats {
+      display: flex; gap: 0;
+      margin-top: 64px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .stat-cell {
+      padding: 20px 36px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--neon);
+      text-shadow: 0 0 12px var(--neon-glow-strong);
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ── SECTION CHROME ── */
+    section { position: relative; z-index: 1; }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .section-eyebrow {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--neon-dim);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 4vw, 36px);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    /* ── SERVICES ── */
+    .services-section {
+      padding: 120px 0;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .service-card {
+      background: var(--surface);
+      padding: 36px 32px;
+      transition: background 0.2s;
+      cursor: default;
+    }
+    .service-card:hover { background: var(--panel); }
+
+    .service-icon {
+      width: 44px; height: 44px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .service-icon svg { width: 100%; height: 100%; }
+
+    .service-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      letter-spacing: 0.03em;
+    }
+    .service-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .service-badge {
+      display: inline-block;
+      margin-top: 16px;
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    .service-badge.live {
+      border-color: rgba(0,255,176,0.3);
+      color: var(--green);
+      background: rgba(0,255,176,0.05);
+    }
+    .service-badge.locked {
+      border-color: rgba(255,144,64,0.3);
+      color: var(--orange);
+      background: rgba(255,144,64,0.05);
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-section { padding: 80px 0 120px; }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .step {
+      background: var(--surface);
+      padding: 44px 36px;
+      position: relative;
+    }
+
+    .step-num {
+      font-family: var(--font-display);
+      font-size: 64px;
+      font-weight: 700;
+      color: var(--text-dim);
+      line-height: 1;
+      margin-bottom: 24px;
+      letter-spacing: -0.03em;
+    }
+    .step:hover .step-num { color: var(--neon-dim); }
+
+    .step-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .step-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── MODALS ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 460px;
+      overflow: hidden;
+      box-shadow: 0 0 80px rgba(0,200,255,0.12);
+      animation: modal-in 0.2s ease;
+    }
+    @keyframes modal-in {
+      from { transform: scale(0.96) translateY(10px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 28px 32px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .modal-close {
+      background: none; border: none;
+      color: var(--text-muted); cursor: pointer;
+      font-size: 20px; line-height: 1;
+      padding: 2px 6px;
+      transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    .modal-body { padding: 28px 32px; }
+    .modal-footer {
+      padding: 20px 32px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-footer-note {
+      font-size: 12px; color: var(--text-dim);
+    }
+    .modal-footer-note a { color: var(--neon-dim); cursor: pointer; text-decoration: none; }
+    .modal-footer-note a:hover { color: var(--neon); }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--neon-dim);
+      box-shadow: 0 0 0 3px rgba(0,200,255,0.1);
+    }
+    .form-input::placeholder { color: var(--text-dim); }
+    textarea.form-input { resize: vertical; min-height: 90px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* ── ADMIN PANEL ── */
+    .admin-panel {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 3000;
+      overflow-y: auto;
+    }
+    .admin-panel.active { display: block; }
+
+    .admin-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .admin-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--neon);
+      letter-spacing: 0.08em;
+    }
+
+    .admin-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    .admin-section-title {
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .request-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .request-info .name {
+      font-weight: 600; color: var(--text); font-size: 15px;
+    }
+    .request-info .meta {
+      font-size: 12px; color: var(--text-muted); margin-top: 4px;
+    }
+    .request-info .reason {
+      font-size: 13px; color: var(--text-muted); margin-top: 8px;
+      font-style: italic;
+    }
+    .request-actions { display: flex; gap: 10px; flex-shrink: 0; }
+    .btn-approve {
+      background: rgba(0,255,176,0.1);
+      border: 1px solid rgba(0,255,176,0.3);
+      color: var(--green);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-approve:hover { background: rgba(0,255,176,0.18); }
+    .btn-deny {
+      background: rgba(255,60,110,0.1);
+      border: 1px solid rgba(255,60,110,0.3);
+      color: var(--red);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-deny:hover { background: rgba(255,60,110,0.18); }
+
+    /* ── MEMBER PORTAL ── */
+    .member-portal {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 2500;
+      overflow-y: auto;
+    }
+    .member-portal.active { display: block; }
+
+    .portal-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .portal-logo {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--neon);
+      text-shadow: 0 0 16px var(--neon-glow-strong);
+    }
+
+    .portal-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    .portal-greeting {
+      font-family: var(--font-display);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .portal-greeting span { color: var(--neon); }
+
+    .portal-desc {
+      color: var(--text-muted); font-size: 14px; margin-bottom: 48px;
+    }
+
+    .services-portal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .portal-service-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+    .portal-service-card:hover {
+      border-color: var(--neon-dim);
+      background: var(--panel);
+      transform: translateY(-2px);
+    }
+    .portal-service-card .ps-icon {
+      font-size: 28px; margin-bottom: 14px;
+    }
+    .portal-service-card .ps-name {
+      font-family: var(--font-display);
+      font-size: 14px; font-weight: 700;
+      color: var(--text); margin-bottom: 4px;
+    }
+    .portal-service-card .ps-url {
+      font-size: 11px; color: var(--text-dim);
+      font-family: var(--font-display);
+    }
+    .portal-service-card .ps-status {
+      font-size: 10px; color: var(--green);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 12px;
+    }
+
+    /* ── SYSTEM STATUS ── */
+    .system-status-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .sys-cell {
+      background: var(--surface);
+      padding: 20px 24px;
+    }
+    .sys-label {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .sys-value {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--neon);
+    }
+    .sys-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .sys-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-dim), var(--neon));
+      border-radius: 2px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--neon-dim);
+    }
+    .footer-copy {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .footer-links {
+      display: flex; gap: 24px; list-style: none;
+    }
+    .footer-links a {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text-muted); }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--neon-dim);
+      border-radius: var(--radius);
+      padding: 14px 24px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--neon);
+      box-shadow: 0 0 30px rgba(0,200,255,0.25);
+      z-index: 9000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--neon-dim); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 80px 20px 40px; }
+      .hero-stats { flex-direction: column; }
+      .stat-cell { border-right: none; border-bottom: 1px solid var(--border); }
+      .steps { grid-template-columns: 1fr; }
+      .container { padding: 0 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .admin-content, .portal-content { padding: 24px 20px; }
+      .system-status-bar { grid-template-columns: repeat(2,1fr); }
+      footer { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a class="nav-logo" href="#">LUBBE<span>NET</span></a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#how">Access</a></li>
+    <li><a href="#" onclick="openModal('admin-login-modal')">Admin</a></li>
+    <li><a href="#" class="nav-btn" onclick="openModal('login-modal')">Sign In</a></li>
+  </ul>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    ALL SYSTEMS ONLINE
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════ HERO ══ -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <p class="hero-eyebrow">Private Home Server Network</p>
+  <h1 class="hero-title"><span class="neon-word">LUBBE</span>NET</h1>
+  <p class="hero-subtitle">
+    A self-hosted media and automation stack, running 24/7 on private infrastructure.
+    Request access to stream, manage, and explore.
+  </p>
+  <div class="hero-actions">
+    <a href="#" class="btn-primary" onclick="openModal('register-modal'); return false;">Request Access</a>
+    <a href="#services" class="btn-ghost">Explore Services</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-cell">
+      <div class="stat-value" id="movie-count">4,218</div>
+      <div class="stat-label">Movies</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value" id="show-count">312</div>
+      <div class="stat-label">TV Shows</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">4K</div>
+      <div class="stat-label">Max Quality</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">99.2%</div>
+      <div class="stat-label">Uptime</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════ SERVICES ══ -->
+<section class="services-section" id="services">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-eyebrow">What's Running</p>
+      <h2 class="section-title">Hosted Services</h2>
+    </div>
+    <div class="services-grid">
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="44" height="44" rx="8" fill="rgba(0,200,255,0.08)"/>
+            <circle cx="22" cy="22" r="11" stroke="#00c8ff" stroke-width="1.5"/>
+            <polygon points="19,16 31,22 19,28" fill="#00c8ff"/>
+          </svg>
+        </div>
+        <div class="service-name">Jellyfin</div>
+        <div class="service-desc">Your personal media server. Stream movies, TV shows and music anywhere with full transcoding support.</div>
+        <div class="service-badge live">● Live</div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="44" height="44" rx="8" fill="rgba(0,200,255,0.08)"/>
+            <circle cx="22" cy="22" r="10" stroke="#00c8ff" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="22" y="26" text-anchor="middle" fill="#00c8ff" font-size="10" font-family="monospace">R</text>
+          </svg>
+        </div>
+        <div class="service-name">Radarr</div>
+        <div class="service-desc">Automated movie management and downloading. Monitors, grabs and sorts new film releases automatically.</div>
+        <div class="service-badge locked">⬡ Members</div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="44" height="44" rx="8" fill="rgba(0,200,255,0.08)"/>
+            <rect x="12" y="16" width="20" height="3" rx="1" fill="#00c8ff" opacity="0.9"/>
+            <rect x="12" y="21" width="14" height="3" rx="1" fill="#00c8ff" opacity="0.5"/>
+            <rect x="12" y="26" width="17" height="3" rx="1" fill="#00c8ff" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="service-name">Sonarr</div>
+        <div class="service-desc">TV series automation. Tracks your shows, downloads new episodes and keeps your library organized.</div>
+        <div class="service-badge locked">⬡ Members</div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="44" height="44" rx="8" fill="rgba(0,200,255,0.08)"/>
+            <path d="M14 30 L22 14 L30 30" stroke="#00c8ff" stroke-width="1.5" fill="none"/>
+            <line x1="17" y1="25" x2="27" y2="25" stroke="#00c8ff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="service-name">Prowlarr</div>
+        <div class="service-desc">Indexer manager and proxy. Integrates with Radarr and Sonarr to keep indexers unified and current.</div>
+        <div class="service-badge locked">⬡ Members</div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="44" height="44" rx="8" fill="rgba(0,200,255,0.08)"/>
+            <rect x="13" y="13" width="8" height="8" rx="2" fill="none" stroke="#00c8ff" stroke-width="1.5"/>
+            <rect x="23" y="13" width="8" height="8" rx="2" fill="none" stroke="#00c8ff" stroke-width="1.5" opacity="0.6"/>
+            <rect x="13" y="23" width="8" height="8" rx="2" fill="none" stroke="#00c8ff" stroke-width="1.5" opacity="0.6"/>
+            <rect x="23" y="23" width="8" height="8" rx="2" fill="none" stroke="#00c8ff" stroke-width="1.5" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="service-name">qBittorrent</div>
+        <div class="service-desc">Torrent client with a clean web UI. Manages all active downloads with category support and scheduling.</div>
+        <div class="service-badge locked">⬡ Members</div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="44" height="44" rx="8" fill="rgba(0,200,255,0.08)"/>
+            <circle cx="22" cy="18" r="5" stroke="#00c8ff" stroke-width="1.5"/>
+            <path d="M13 34 C13 28 31 28 31 34" stroke="#00c8ff" stroke-width="1.5" fill="none"/>
+          </svg>
+        </div>
+        <div class="service-name">Overseerr</div>
+        <div class="service-desc">Request management for your media library. Users can browse and request content directly from here.</div>
+        <div class="service-badge live">● Live</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════ HOW IT WORKS ══ -->
+<section class="how-section" id="how">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-eyebrow">Getting In</p>
+      <h2 class="section-title">How Access Works</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Submit a Request</div>
+        <div class="step-body">Fill out a short registration form with your name and a brief reason for access. No personal data beyond what's needed.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Admin Review</div>
+        <div class="step-body">The admin reviews your request. Approval or denial comes within a day or two. You'll receive a code to activate your account.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Sign In & Explore</div>
+        <div class="step-body">Once approved, sign in with your credentials to access Jellyfin and the full service dashboard from one place.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════ FOOTER ══ -->
+<footer>
+  <div class="footer-logo">LUBBENET</div>
+  <ul class="footer-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#how">Access</a></li>
+    <li><a href="#" onclick="openModal('register-modal')">Register</a></li>
+  </ul>
+  <p class="footer-copy">Private server. Unauthorized access prohibited.</p>
+</footer>
+
+
+<!-- ══════════════════════════════════ MODALS ══ -->
+
+<!-- Register Modal -->
+<div class="modal-overlay" id="register-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Request Access</div>
+        <div class="modal-subtitle">The admin will review your request manually.</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('register-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-input" placeholder="Jane" id="reg-first" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-input" placeholder="Doe" id="reg-last" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="jane@example.com" id="reg-email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-input" placeholder="janedoe" id="reg-username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason for Access</label>
+        <textarea class="form-input" placeholder="Tell the admin why you'd like access..." id="reg-reason"></textarea>
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;display:block;text-align:center;" onclick="submitRequest()">Submit Request</button>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-footer-note">Already approved? <a onclick="closeModal('register-modal');openModal('login-modal')">Sign in</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Sign In</div>
+        <div class="modal-subtitle">Approved accounts only.</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('login-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-input" placeholder="your-username" id="login-user" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" placeholder="••••••••" id="login-pass" />
+      </div>
+      <button class="btn-primary" style="width:100%;display:block;text-align:center;" onclick="doLogin()">Sign In</button>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:16px;text-align:center;">
+        Hint: try <strong style="color:var(--text-muted)">admin</strong> / <strong style="color:var(--text-muted)">admin</strong> for admin panel, or <strong style="color:var(--text-muted)">user</strong> / <strong style="color:var(--text-muted)">user</strong> for member portal.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-footer-note">Need access? <a onclick="closeModal('login-modal');openModal('register-modal')">Request it</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Login Modal -->
+<div class="modal-overlay" id="admin-login-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Admin Access</div>
+        <div class="modal-subtitle">Restricted to administrators.</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('admin-login-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Admin Username</label>
+        <input type="text" class="form-input" placeholder="admin" id="adm-user" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" placeholder="••••••••" id="adm-pass" />
+      </div>
+      <button class="btn-primary" style="width:100%;display:block;text-align:center;" onclick="doAdminLogin()">Enter Admin Panel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ ADMIN PANEL ══ -->
+<div class="admin-panel" id="admin-panel">
+  <nav class="admin-nav">
+    <span class="admin-title">⬡ LUBBENET ADMIN</span>
+    <div style="display:flex;gap:16px;align-items:center;">
+      <div class="status-pill"><div class="status-dot"></div>ONLINE</div>
+      <button class="btn-ghost" style="padding:8px 18px;font-size:12px;" onclick="closeAdmin()">Exit Panel</button>
+    </div>
+  </nav>
+  <div class="admin-content">
+    <div style="margin-bottom:48px;">
+      <p class="admin-section-title">Pending Registration Requests</p>
+      <div id="requests-list"></div>
+    </div>
+    <div>
+      <p class="admin-section-title">Approved Members</p>
+      <div id="members-list"></div>
+    </div>
+    <div style="margin-top:48px;">
+      <p class="admin-section-title">System Overview</p>
+      <div class="system-status-bar">
+        <div class="sys-cell">
+          <div class="sys-label">CPU Usage</div>
+          <div class="sys-value">34%</div>
+          <div class="sys-bar"><div class="sys-bar-fill" style="width:34%"></div></div>
+        </div>
+        <div class="sys-cell">
+          <div class="sys-label">RAM</div>
+          <div class="sys-value">11.2 GB</div>
+          <div class="sys-bar"><div class="sys-bar-fill" style="width:56%"></div></div>
+        </div>
+        <div class="sys-cell">
+          <div class="sys-label">Storage</div>
+          <div class="sys-value">14.8 TB</div>
+          <div class="sys-bar"><div class="sys-bar-fill" style="width:74%"></div></div>
+        </div>
+        <div class="sys-cell">
+          <div class="sys-label">Active Streams</div>
+          <div class="sys-value">3</div>
+          <div class="sys-bar"><div class="sys-bar-fill" style="width:30%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ MEMBER PORTAL ══ -->
+<div class="member-portal" id="member-portal">
+  <nav class="portal-nav">
+    <span class="portal-logo">LUBBENET</span>
+    <div style="display:flex;gap:16px;align-items:center;">
+      <div class="status-pill"><div class="status-dot"></div>CONNECTED</div>
+      <button class="btn-ghost" style="padding:8px 18px;font-size:12px;" onclick="closeMember()">Sign Out</button>
+    </div>
+  </nav>
+  <div class="portal-content">
+    <h2 class="portal-greeting">Welcome back, <span id="portal-username">User</span>.</h2>
+    <p class="portal-desc">Your personal dashboard for all Lubbenet services.</p>
+
+    <p class="admin-section-title">Services</p>
+    <div class="services-portal-grid">
+      <a class="portal-service-card" href="#" onclick="toast('Opening Jellyfin…'); return false;">
+        <div class="ps-icon">▶</div>
+        <div class="ps-name">Jellyfin</div>
+        <div class="ps-url">jellyfin.lubbenet.local</div>
+        <div class="ps-status">● Online</div>
+      </a>
+      <a class="portal-service-card" href="#" onclick="toast('Opening Overseerr…'); return false;">
+        <div class="ps-icon">🎬</div>
+        <div class="ps-name">Overseerr</div>
+        <div class="ps-url">overseerr.lubbenet.local</div>
+        <div class="ps-status">● Online</div>
+      </a>
+      <a class="portal-service-card" href="#" onclick="toast('Opening Radarr…'); return false;">
+        <div class="ps-icon">⬡</div>
+        <div class="ps-name">Radarr</div>
+        <div class="ps-url">radarr.lubbenet.local</div>
+        <div class="ps-status">● Online</div>
+      </a>
+      <a class="portal-service-card" href="#" onclick="toast('Opening Sonarr…'); return false;">
+        <div class="ps-icon">📺</div>
+        <div class="ps-name">Sonarr</div>
+        <div class="ps-url">sonarr.lubbenet.local</div>
+        <div class="ps-status">● Online</div>
+      </a>
+      <a class="portal-service-card" href="#" onclick="toast('Opening Prowlarr…'); return false;">
+        <div class="ps-icon">🔍</div>
+        <div class="ps-name">Prowlarr</div>
+        <div class="ps-url">prowlarr.lubbenet.local</div>
+        <div class="ps-status">● Online</div>
+      </a>
+      <a class="portal-service-card" href="#" onclick="toast('Opening qBittorrent…'); return false;">
+        <div class="ps-icon">↓</div>
+        <div class="ps-name">qBittorrent</div>
+        <div class="ps-url">qbt.lubbenet.local</div>
+        <div class="ps-status">● Online</div>
+      </a>
+    </div>
+
+    <p class="admin-section-title" style="margin-top:40px;">Server Status</p>
+    <div class="system-status-bar">
+      <div class="sys-cell">
+        <div class="sys-label">CPU Usage</div>
+        <div class="sys-value">34%</div>
+        <div class="sys-bar"><div class="sys-bar-fill" style="width:34%"></div></div>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-label">RAM</div>
+        <div class="sys-value">11.2 GB</div>
+        <div class="sys-bar"><div class="sys-bar-fill" style="width:56%"></div></div>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-label">Storage</div>
+        <div class="sys-value">14.8 TB</div>
+        <div class="sys-bar"><div class="sys-bar-fill" style="width:74%"></div></div>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-label">Active Streams</div>
+        <div class="sys-value">3</div>
+        <div class="sys-bar"><div class="sys-bar-fill" style="width:30%"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── STATE ── */
+  let requests = [
+    { id: 1, first: 'Marcus', last: 'Holt',   email: 'marcus@example.com', username: 'marcush',  reason: 'Want to access Jellyfin for movie nights at home.',    status: 'pending' },
+    { id: 2, first: 'Lena',   last: 'Varga',  email: 'lena@example.com',   username: 'lenavarga', reason: 'Radarr access for managing my personal watchlist.',      status: 'pending' },
+    { id: 3, first: 'Tariq',  last: 'Naseem', email: 'tariq@example.com',  username: 'tariqn',   reason: 'Just found out about this server, would love to join.', status: 'pending' },
+  ];
+
+  let members = [
+    { username: 'alex_k',   name: 'Alex Kim',     joined: '2025-11-02' },
+    { username: 'sofiaM',   name: 'Sofia Martins', joined: '2025-12-15' },
+  ];
+
+  /* ── MODAL ── */
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('active'); });
+  });
+
+  /* ── TOAST ── */
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ── REGISTER ── */
+  function submitRequest() {
+    const first    = document.getElementById('reg-first').value.trim();
+    const last     = document.getElementById('reg-last').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const username = document.getElementById('reg-username').value.trim();
+    const reason   = document.getElementById('reg-reason').value.trim();
+    if (!first || !last || !email || !username || !reason) {
+      toast('Please fill in all fields.'); return;
+    }
+    requests.push({ id: Date.now(), first, last, email, username, reason, status: 'pending' });
+    closeModal('register-modal');
+    toast('Request submitted. The admin will review it shortly.');
+  }
+
+  /* ── LOGIN ── */
+  function doLogin() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value.trim();
+    if (u === 'admin' && p === 'admin') {
+      closeModal('login-modal');
+      openAdminPanel();
+    } else if (u === 'user' && p === 'user') {
+      closeModal('login-modal');
+      openMemberPortal('Member');
+    } else if (members.find(m => m.username === u) && p === 'pass') {
+      const m = members.find(x => x.username === u);
+      closeModal('login-modal');
+      openMemberPortal(m.name.split(' ')[0]);
+    } else {
+      toast('Invalid credentials or account not approved.');
+    }
+  }
+
+  function doAdminLogin() {
+    const u = document.getElementById('adm-user').value.trim();
+    const p = document.getElementById('adm-pass').value.trim();
+    if (u === 'admin' && p === 'admin') {
+      closeModal('admin-login-modal');
+      openAdminPanel();
+    } else {
+      toast('Invalid admin credentials.');
+    }
+  }
+
+  /* ── ADMIN PANEL ── */
+  function openAdminPanel() {
+    renderAdmin();
+    document.getElementById('admin-panel').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAdmin() {
+    document.getElementById('admin-panel').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function renderAdmin() {
+    const pending = requests.filter(r => r.status === 'pending');
+    const rl = document.getElementById('requests-list');
+    rl.innerHTML = pending.length ? pending.map(r => `
+      <div class="request-card" id="req-${r.id}">
+        <div class="request-info">
+          <div class="name">${r.first} ${r.last} <span style="color:var(--text-dim);font-size:12px;margin-left:8px;">@${r.username}</span></div>
+          <div class="meta">${r.email}</div>
+          <div class="reason">"${r.reason}"</div>
+        </div>
+        <div class="request-actions">
+          <button class="btn-approve" onclick="approveRequest(${r.id})">Approve</button>
+          <button class="btn-deny"    onclick="denyRequest(${r.id})">Deny</button>
+        </div>
+      </div>
+    `).join('') : '<p style="color:var(--text-dim);font-size:13px;padding:16px 0;">No pending requests.</p>';
+
+    const ml = document.getElementById('members-list');
+    ml.innerHTML = members.map(m => `
+      <div class="request-card">
+        <div class="request-info">
+          <div class="name">${m.name} <span style="color:var(--text-dim);font-size:12px;margin-left:8px;">@${m.username}</span></div>
+          <div class="meta">Joined ${m.joined}</div>
+        </div>
+        <span style="color:var(--green);font-family:var(--font-display);font-size:11px;letter-spacing:0.1em;">● ACTIVE</span>
+      </div>
+    `).join('');
+  }
+
+  function approveRequest(id) {
+    const req = requests.find(r => r.id === id);
+    if (!req) return;
+    req.status = 'approved';
+    members.push({ username: req.username, name: `${req.first} ${req.last}`, joined: new Date().toISOString().slice(0,10) });
+    renderAdmin();
+    toast(`@${req.username} approved.`);
+  }
+
+  function denyRequest(id) {
+    const req = requests.find(r => r.id === id);
+    if (!req) return;
+    req.status = 'denied';
+    renderAdmin();
+    toast(`Request from @${req.username} denied.`);
+  }
+
+  /* ── MEMBER PORTAL ── */
+  function openMemberPortal(name) {
+    document.getElementById('portal-username').textContent = name;
+    document.getElementById('member-portal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMember() {
+    document.getElementById('member-portal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+</script>
+</body>
+</html>
